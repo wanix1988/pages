@@ -10,10 +10,16 @@
         <content type="html"><![CDATA[<h1 id="使用KGDB调试Linux-Kernel-20181114"><a href="#使用KGDB调试Linux-Kernel-20181114" class="headerlink" title="使用KGDB调试Linux Kernel(20181114)"></a>使用KGDB调试Linux Kernel(20181114)</h1><ol><li><p>Grub启动命令行中添加kgdboc=ttyS0,115200 kgdbwait nokaslr<br>a) rodata=off   </p><blockquote><p>这条好像没什么用？待验证  </p></blockquote><p>b)必须添加nokaslr，否则vmlinux符号会对不上，无法正常显示debug信息和下断点</p></li><li>使用socat做转发<br>a) sudo socat -d -d /tmp/vboxsock PTY<blockquote><ol><li>记下打印出的转发设备，比如/dev/pts/4  </li><li>这个操作要在串口连接虚拟机前做，不然就会直接退出，连接不上了  </li><li>控制台不要关闭</li><li>如果没有权限连接/dev/pts/4，可以在gdb中执行下面的命令开启权限<blockquote><p>sudo chmod 777 /dev/pts/4</p></blockquote></li></ol></blockquote></li><li>不要在start_kernel处下断点，因为kgdb在start_kernel执行后才初始化，所以不会在start_kernel断下来</li><li>References   <ul><li><a href="https://kgdb.wiki.kernel.org/index.php/Main_Page" target="_blank" rel="noopener">https://kgdb.wiki.kernel.org/index.php/Main_Page</a></li><li><a href="https://kernelnewbies.org/KernelHacking-HOWTO/Debugging_Kernel" target="_blank" rel="noopener">https://kernelnewbies.org/KernelHacking-HOWTO/Debugging_Kernel</a></li><li><a href="https://www.kernel.org/doc/htmldocs/kgdb/index.html" target="_blank" rel="noopener">https://www.kernel.org/doc/htmldocs/kgdb/index.html</a></li><li><a href="https://stackoverflow.com/questions/48539434/kgdb-and-gdb-over-serial-cable-cannot-set-breakpoints" target="_blank" rel="noopener">https://stackoverflow.com/questions/48539434/kgdb-and-gdb-over-serial-cable-cannot-set-breakpoints</a></li></ul></li></ol>]]></content>
       
       
+      <categories>
+          
+          <category> kernel </category>
+          
+      </categories>
+      
       
         <tags>
             
-            <tag> debug linux kernel kgdb kdb </tag>
+            <tag> debug,linux,kernel,kgdbkdb </tag>
             
         </tags>
       
@@ -38,6 +44,12 @@
         <content type="html"><![CDATA[<h1 id="使用VirtualBox搭建Linux-Kernel调试平台"><a href="#使用VirtualBox搭建Linux-Kernel调试平台" class="headerlink" title="使用VirtualBox搭建Linux Kernel调试平台"></a>使用VirtualBox搭建Linux Kernel调试平台</h1><h2 id="1-安装linux-source-uname-r"><a href="#1-安装linux-source-uname-r" class="headerlink" title="1.安装linux-source-$(uname -r)"></a>1.安装linux-source-$(uname -r)</h2><pre><code>a) 最好在Host上安装/编译，然后将linux-source目录挂载到虚拟机中安装，如果在虚拟机中安装和编译，会导致debug kernel的时候无法访问源码和symbolsb) 如果/分区够大(free &gt; 30GB)，可以选择放在/usr/src目录下，否则找分区free空间较大的放置，防止空间不够</code></pre><h2 id="2-解压-usr-src-linux-source-uname-r-并修改相关目录权限"><a href="#2-解压-usr-src-linux-source-uname-r-并修改相关目录权限" class="headerlink" title="2.解压/usr/src/linux-source-$(uname -r),并修改相关目录权限"></a>2.解压/usr/src/linux-source-$(uname -r),并修改相关目录权限</h2><h2 id="3-使用make-oldconfig创建模板config"><a href="#3-使用make-oldconfig创建模板config" class="headerlink" title="3.使用make oldconfig创建模板config"></a>3.使用make oldconfig创建模板config</h2><h2 id="4-使用make-menuconfig客制化选项-gt-打开debug开关和所需其他功能"><a href="#4-使用make-menuconfig客制化选项-gt-打开debug开关和所需其他功能" class="headerlink" title="4.使用make menuconfig客制化选项 ==&gt; 打开debug开关和所需其他功能"></a>4.使用make menuconfig客制化选项 ==&gt; 打开debug开关和所需其他功能</h2><h2 id="5-make-j4-amp-amp-make-modules"><a href="#5-make-j4-amp-amp-make-modules" class="headerlink" title="5.make -j4 &amp;&amp; make modules"></a>5.make -j4 &amp;&amp; make modules</h2><h2 id="6-make-install-amp-amp-make-modules-install"><a href="#6-make-install-amp-amp-make-modules-install" class="headerlink" title="6.make install &amp;&amp; make modules_install"></a>6.make install &amp;&amp; make modules_install</h2><h2 id="7-sudo-mkinitramfs-4-15-0-o-boot-initrd-4-15-8"><a href="#7-sudo-mkinitramfs-4-15-0-o-boot-initrd-4-15-8" class="headerlink" title="7.sudo mkinitramfs 4.15.0 -o /boot/initrd-4.15.8"></a>7.sudo mkinitramfs 4.15.0 -o /boot/initrd-4.15.8</h2><pre><code>a) 这步必须要做，否则开机找不到initramfs会无法挂载/root</code></pre><h2 id="8-sudo-update-grub"><a href="#8-sudo-update-grub" class="headerlink" title="8.sudo update-grub"></a>8.sudo update-grub</h2><h2 id="9-设置VirtualBox的串口"><a href="#9-设置VirtualBox的串口" class="headerlink" title="9.设置VirtualBox的串口"></a>9.设置VirtualBox的串口</h2><pre><code>a) com1b) Host Pipec) 不要勾选连接已有pipe/socketd) Path/Address填写/tmp/vboxsock (随便命名)</code></pre><h2 id="10-安装minicom"><a href="#10-安装minicom" class="headerlink" title="10.安装minicom"></a>10.安装minicom</h2><h2 id="11-配置minicom"><a href="#11-配置minicom" class="headerlink" title="11.配置minicom"></a>11.配置minicom</h2><pre><code>a) 串口名称unix#/tmp/vboxsock ==&gt;此处一定要记得加unix#前缀，否则连不上b) 115200n8c) 配置会写到~/.minirc中</code></pre><h2 id="12-Kgdb设置"><a href="#12-Kgdb设置" class="headerlink" title="12.Kgdb设置"></a>12.Kgdb设置</h2><pre><code>a) console=ttyS0,115200 kgdboc=ttyS0,115200 kgdbwaitb) 启动内核后，在串口终端中，输入如下命令：    i.bash-3.2# echo g &gt; /proc/sysrq-trigger         1.SysRq : DEBUG        2.Entering KGDBc) 建议开始时每次在启动时暂停grub，然后在kernel后输入上面command line参数后启动，避免修改grub相关文件导致的无法启动问题    d) 如果修改/boot/grub/grub.cfg，或者/etc/default/grub，或者/boot/grub/menu.lst等文件导致启动问题无法正常进入系统，可以在光驱中挂载livecd，然后进入后挂载/boot分区后修复即可，无需重装系统。</code></pre><h1 id="注意事项："><a href="#注意事项：" class="headerlink" title="注意事项："></a>注意事项：</h1><pre><code>1.Ubuntu 16.04.5 LTS使用Ubuntu18.04 LTS编译的linux-source-4.15.8执行make modules_install时报错: error while loading shared libraries: libssl.so.1.1 (and libcrypto.so.1.1)    a) 需要编译libopenssl-1.1.x版本替换1.0.0版本        ii.下载并解压源码：            1.wget https://www.openssl.org/source/openssl-1.1.1.tar.gz            2.tar -zxf openssl-1.1.1.tar.gz        iii.编译安装：            1.cd openssl-1.1.1            2../config            3.make install        iv.移除旧版本 Openssl：            1.mv /usr/bin/openssl /tmp/            2.ln -s /usr/local/bin/openssl /usr/bin/openssl        v.复制源码：            1.如果报错：openssl: error while loading shared libraries: libssl.so.1.1: cannot open shared object                a)cp libssl.so.1.1 /lib/x86_64-linux-gnu                b)libcrypto.so.1.1 /lib/x86_64-linux-gnu2.映射Host文件夹到虚拟机    a) 虚拟机中安装VirtualBox Guest Additional        i.sudo mount -t iso9660 /dev/cdrom /mnt/        ii.sudo /mnt/VBoxAdditional.sh    b) 在Share Folders中选择Host目录，并自动挂载文件夹        i.sudo mkdir /mnt/vboxshare        ii.sudo mount -t vboxsf Host文件夹名 /mnt/vboxshare            1.上面要使用Host文件夹名，否则使用share会报Protocol Error</code></pre>]]></content>
       
       
+      <categories>
+          
+          <category> kernel </category>
+          
+      </categories>
+      
       
         <tags>
             
@@ -55,6 +67,12 @@
         <content type="html"><![CDATA[<h1 id="stdcall、cdcel和-fastcall三者的区别"><a href="#stdcall、cdcel和-fastcall三者的区别" class="headerlink" title="stdcall、cdcel和__fastcall三者的区别"></a><strong>stdcall、</strong>cdcel和__fastcall三者的区别</h1><p><strong>stdcall、</strong>cdecl和__fastcall是三种函数调用协议，函数调用协议会影响函数参数的入栈方式、栈内数据的清除方式、编译器函数名的修饰规则等。</p><h2 id="调用协议常用场合"><a href="#调用协议常用场合" class="headerlink" title="调用协议常用场合"></a>调用协议常用场合</h2><ol><li>__stdcall：Windows API默认的函数调用协议。</li><li>__cdecl：C/C++默认的函数调用协议。</li><li>__fastcall：适用于对性能要求较高的场合。</li></ol><h2 id="函数参数入栈方式"><a href="#函数参数入栈方式" class="headerlink" title="函数参数入栈方式"></a>函数参数入栈方式</h2><ol><li>__stdcall：函数参数由右向左入栈。</li><li>__cdecl：函数参数由右向左入栈。</li><li>__fastcall：从左开始不大于4字节的参数放入CPU的ECX和EDX寄存器，其余参数从右向左入栈。</li></ol><p>问题一：__fastcall在寄存器中放入不大于4字节的参数，故性能较高，适用于需要高性能的场合。</p><h2 id="栈内数据清除方式"><a href="#栈内数据清除方式" class="headerlink" title="栈内数据清除方式"></a>栈内数据清除方式</h2><ol><li>__stdcall：函数调用结束后由被调用函数清除栈内数据。</li><li>__cdecl：函数调用结束后由函数调用者清除栈内数据。</li><li>__fastcall：函数调用结束后由被调用函数清除栈内数据。<blockquote><p>问题一：不同编译器设定的栈结构不尽相同，跨开发平台时由函数调用者清除栈内数据不可行。</p></blockquote></li></ol><blockquote><p>问题二：某些函数的参数是可变的，如printf函数，这样的函数只能由函数调用者清除栈内数据。</p></blockquote><blockquote><p>问题三：由调用者清除栈内数据时，每次调用都包含清除栈内数据的代码，故可执行文件较大。</p></blockquote><h2 id="C语言编译器函数名称修饰规则"><a href="#C语言编译器函数名称修饰规则" class="headerlink" title="C语言编译器函数名称修饰规则"></a>C语言编译器函数名称修饰规则</h2><ol><li>__stdcall：编译后，函数名被修饰为“_functionname@number”。</li><li>__cdecl：编译后，函数名被修饰为“_functionname”。</li><li>__fastcall：编译后，函数名给修饰为“@functionname@nmuber”。</li></ol><blockquote><p>注：“functionname”为函数名，“number”为参数字节数。</p></blockquote><blockquote><p>注：函数实现和函数定义时如果使用了不同的函数调用协议，则无法实现函数调用。</p></blockquote><h2 id="C-语言编译器函数名称修饰规则"><a href="#C-语言编译器函数名称修饰规则" class="headerlink" title="C++语言编译器函数名称修饰规则"></a>C++语言编译器函数名称修饰规则</h2><ol><li>__stdcall：编译后，函数名被修饰为“?functionname@@YG<strong>**</strong>@Z”。</li><li>__cdecl：编译后，函数名被修饰为“?functionname@@YA<strong>**</strong>@Z”。</li><li>__fastcall：编译后，函数名被修饰为“?functionname@@YI<strong>**</strong>@Z”。</li></ol><blockquote><p>注：“<strong>**</strong>”为函数返回值类型和参数类型表。</p></blockquote><blockquote><p>注：函数实现和函数定义时如果使用了不同的函数调用协议，则无法实现函数调用。</p></blockquote><p>C语言和C++语言间如果不进行特殊处理，也无法实现函数的互相调用。</p>]]></content>
       
       
+      
+        <tags>
+            
+            <tag> C/C++ </tag>
+            
+        </tags>
       
     </entry>
     
